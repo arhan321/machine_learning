@@ -25,7 +25,7 @@ Dataset yang digunakan berisi informasi tentang mahasiswa, termasuk:
 
 - `Keterlibatan Orang Tua dan Aktivitas Ekstrakurikuler:` Partisipasi dalam tutoring, olahraga, musik, dll.
 
-- `Kinerja Akademik:` Nilai GPA dan klasifikasi GradeClass yang menggambarkan kategori nilai berdasarkan GPA. (GPA adalah singkatan dari Grade Point Average)
+- `Kinerja Akademik:` Nilai GPA dan klasifikasi GradeClass yang menggambarkan kategori nilai berdasarkan GPA. (GPA adalah singkatan dari Grade Point Average, Dalam bahasa Indonesia, GPA dikenal sebagai Indeks Prestasi Kumulatif (IPK) atau Indeks Prestasi (IP).)
 
 ## How To Use This Machine
 ```bash
