@@ -1,4 +1,8 @@
+# flask
+# pandas
+# matplotlib
+# seaborn
+
 flask
 pandas
-matplotlib
-seaborn
+plotly
