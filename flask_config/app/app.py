@@ -106,28 +106,51 @@ def index():
 
     # Plot 1: Histogram interaktif (Study Time)
     fig1 = px.histogram(df, x="StudyTimeWeekly", nbins=20, title="Distribusi Waktu Belajar Mingguan")
-    plots.append({"div": fig1.to_html(full_html=False), "title": "Distribusi Waktu Belajar"})
+    plots.append({
+        "div": fig1.to_html(full_html=False),
+        "title": "Distribusi Waktu Belajar",
+        "desc": "Grafik ini menunjukkan sebaran jam belajar mingguan mahasiswa. Pola ini dapat membantu mengidentifikasi waktu optimal untuk belajar."
+    })
 
     # Plot 2: Histogram Absensi
     fig2 = px.histogram(df, x="Absences", nbins=20, title="Distribusi Absensi", color_discrete_sequence=["green"])
-    plots.append({"div": fig2.to_html(full_html=False), "title": "Distribusi Absensi"})
+    plots.append({
+        "div": fig2.to_html(full_html=False),
+        "title": "Distribusi Absensi",
+        "desc": "Histogram absensi memperlihatkan frekuensi ketidakhadiran mahasiswa. Dapat digunakan untuk melihat korelasi terhadap GPA."
+    })
 
     # Plot 3: Histogram GPA
     fig3 = px.histogram(df, x="GPA", nbins=20, title="Distribusi GPA", color_discrete_sequence=["red"])
-    plots.append({"div": fig3.to_html(full_html=False), "title": "Distribusi GPA"})
+    plots.append({
+        "div": fig3.to_html(full_html=False),
+        "title": "Distribusi GPA",
+        "desc": "Grafik ini menggambarkan sebaran nilai akhir mahasiswa (GPA). Dapat menunjukkan apakah distribusinya normal atau condong."
+    })
 
     # Plot 4: Barplot GradeClass
     fig4 = px.histogram(df, x="GradeClass", title="Distribusi Grade Kelas")
-    plots.append({"div": fig4.to_html(full_html=False), "title": "Distribusi GradeClass"})
+    plots.append({
+        "div": fig4.to_html(full_html=False),
+        "title": "Distribusi GradeClass",
+        "desc": "Bar chart ini menunjukkan jumlah mahasiswa pada tiap kelas (GradeClass). Ini membantu memetakan persebaran prestasi akademik."
+    })
 
     # Plot 5: Heatmap Korelasi
     corr = df[['StudyTimeWeekly', 'Absences', 'GPA', 'Age', 'ParentalEducation']].corr()
     fig5 = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu", title="Heatmap Korelasi")
-    plots.append({"div": fig5.to_html(full_html=False), "title": "Korelasi Antar Variabel"})
+    plots.append({
+        "div": fig5.to_html(full_html=False),
+        "title": "Korelasi Antar Variabel",
+        "desc": "Heatmap ini menunjukkan kekuatan hubungan antar fitur seperti GPA, absensi, usia, dll. Warna merah/biru menandakan korelasi kuat positif atau negatif."
+    })
 
+    # Konversi DataFrame ke HTML Table
     table_html = df.to_html(classes="table table-bordered table-striped table-sm", index=False)
+
     return render_template("index.html", plots=plots, table=table_html)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
+
 

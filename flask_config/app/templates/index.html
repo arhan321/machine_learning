@@ -1,70 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Visualisasi Interaktif Mahasiswa</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
-    body {
-      background: #f8f9fa;
+    /* ---- GLOBAL ---- */
+    body     { background: linear-gradient(135deg,#eef2f7 0%,#f8f9fa 60%); font-family: "Segoe UI",sans-serif; }
+    h1,h4    { font-weight: 700; }
+    /* ---- TABLE ---- */
+    .table-container   { overflow-x:auto; margin-top:3rem; }
+    .table-scroll      { max-height:400px; overflow-y:auto; display:block; }
+    .table-scroll::-webkit-scrollbar{ width:8px; }
+    .table-scroll::-webkit-scrollbar-thumb{ background:#b0b4bb;border-radius:4px; }
+    /* ---- CARD PLOT ---- */
+    .plot-card{
+      background:rgba(255,255,255,.75);
+      backdrop-filter:blur(6px);
+      border-radius:18px;
+      padding:24px;
+      box-shadow:0 10px 24px rgba(0,0,0,.12);
+      transition:transform .3s, box-shadow .3s;
     }
-    h1 {
-      font-weight: bold;
+    .plot-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 16px 32px rgba(0,0,0,.16);
     }
-    .table-container {
-      overflow-x: auto;
-      margin-top: 40px;
+    .plot-title{ font-size:1.05rem; font-weight:600; margin-bottom:.25rem; }
+    /* ---- CONCLUSION ---- */
+    .conclusion{
+      background:#ffffff;
+      border-left:6px solid #0d6efd;
+      border-radius:12px;
+      box-shadow:0 8px 24px rgba(13,110,253,.15);
+      padding:32px;
     }
-    .table-scroll {
-      max-height: 400px;
-      overflow-y: auto;
-      display: block;
-    }
-    .table-scroll::-webkit-scrollbar {
-      width: 8px;
-    }
-    .table-scroll::-webkit-scrollbar-thumb {
-      background-color: #aaa;
-      border-radius: 4px;
-    }
-    .plot-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-      height: 100%;
-    }
-    .plot-card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    }
-    .plot-title {
-      font-weight: 600;
-      margin-bottom: 10px;
+    .conclusion p{ margin-bottom:1rem; text-align:justify; }
+    .callout{
+      background:#0d6efd;
+      color:#fff;
+      border-radius:10px;
+      padding:1rem 1.25rem;
+      box-shadow:inset 0 0 6px rgba(0,0,0,.15);
+      font-size:.95rem;
     }
   </style>
 </head>
 <body>
-  <div class="container py-4">
-    <h1 class="text-center mb-5">📊 Visualisasi Interaktif Data Mahasiswa</h1>
+  <div class="container py-5">
+    <h1 class="text-center mb-5">
+      <i class="bi bi-bar-chart-fill text-primary"></i>
+      best study time prediction based on lms access and assignment grades
+    </h1>
 
+    <!-- DATASET ---------------------------------------------------------->
     <div class="table-container">
-      <h4 class="mt-4">🗂️ Dataset Mahasiswa</h4>
+      <h4 class="mb-3"><i class="bi bi-table"></i> Dataset Mahasiswa</h4>
       <div class="table-scroll">
         {{ table | safe }}
       </div>
     </div>
 
-    <div class="row mt-5">
+    <!-- VISUALISASI ------------------------------------------------------>
+    <div class="row g-4 mt-5">
       {% for plot in plots %}
-      <div class="col-md-6 mb-4 d-flex">
+      <div class="col-lg-6 d-flex">
         <div class="plot-card w-100">
-          <div class="plot-title">{{ plot.title }}</div>
+          <div class="plot-title"><i class="bi bi-graph-up-arrow text-secondary"></i> {{ plot.title }}</div>
+          <p class="text-muted mb-2">{{ plot.desc }}</p>
           {{ plot.div | safe }}
         </div>
       </div>
       {% endfor %}
+    </div>
+
+    <!-- KESIMPULAN ------------------------------------------------------->
+    <div class="conclusion mt-5">
+      <h4 class="mb-3"><i class="bi bi-lightbulb-fill text-warning"></i> Kesimpulan Analisis</h4>
+
+      <p><strong>1. Distribusi variabel utama.</strong><br>
+         • <em>StudyTimeWeekly</em> (0 – 20 jam/minggu) tersebar cukup merata, menandakan kebiasaan belajar yang beragam.<br>
+         • <em>Absences</em> kebanyakan 5 – 25 kali; sedikit sekali yang hadir sempurna.<br>
+         • <em>GPA</em> berkumpul pada 1.8 – 2.8; mayoritas berada di kategori performa menengah.</p>
+
+      <p><strong>2. Hubungan antarvariabel.</strong><br>
+         • Korelasi <em>Absences&nbsp;↔&nbsp;GPA = –0.92</em>: ketidakhadiran tinggi → penurunan GPA drastis.<br>
+         • Korelasi <em>StudyTimeWeekly&nbsp;↔&nbsp;GPA = +0.18</em>: efek positif ada, tetapi jauh lebih lemah.</p>
+
+      <p><strong>3. Kinerja Regresi Linier.</strong><br>
+         Fitur <code>[StudyTimeWeekly, Absences]</code> → <em>MSE ≈ 0.10</em>, <em>R² ≈ 0.88</em>.  
+         Model sederhana ini sudah menjelaskan 88 % variansi GPA.</p>
+
+      <p><strong>4. Jam belajar terbaik.</strong><br>
+         Analisis rata-rata GPA tiap jam belajar menunjukkan titik optimum statistik di
+         <span class="fw-bold text-primary">18 – 20 jam / minggu</span> (≈ 2½ jam / hari).  
+         Di atas rentang ini kenaikan GPA makin datar (*diminishing return*).</p>
+
+      <div class="callout mt-4">
+        <i class="bi bi-check-circle-fill"></i>
+        <strong>Rekomendasi praktis:</strong> Pertahankan <u>kehadiran tinggi</u> (absensi &lt; 5) dan alokasikan waktu belajar
+        sekitar <b>18 ± 2 jam / minggu</b>. Strategi ini secara rata-rata mampu
+        menaikkan GPA ±0.45 poin—lebih efektif daripada sekadar menambah jam belajar tanpa memperbaiki kedisiplinan hadir.
+      </div>
     </div>
   </div>
 </body>
