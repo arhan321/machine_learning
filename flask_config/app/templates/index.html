@@ -2,79 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Visualisasi Interaktif Mahasiswa</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <title>Best Study Time Prediction</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <style>
     /* ---- GLOBAL ---- */
-    body     { background: linear-gradient(135deg,#eef2f7 0%,#f8f9fa 60%); font-family: "Segoe UI",sans-serif; }
-    h1,h4    { font-weight: 700; }
+    body {background:linear-gradient(135deg,#eef2f7 0%,#f8f9fa 60%);font-family:"Segoe UI",sans-serif}
+    h1,h4 {font-weight:700}
     /* ---- TABLE ---- */
-    .table-container   { overflow-x:auto; margin-top:3rem; }
-    .table-scroll      { max-height:400px; overflow-y:auto; display:block; }
-    .table-scroll::-webkit-scrollbar{ width:8px; }
-    .table-scroll::-webkit-scrollbar-thumb{ background:#b0b4bb;border-radius:4px; }
+    .table-container{overflow-x:auto;margin-top:3rem}
+    .table-scroll{max-height:400px;overflow-y:auto;display:block}
+    .table-scroll::-webkit-scrollbar{width:8px}
+    .table-scroll::-webkit-scrollbar-thumb{background:#b0b4bb;border-radius:4px}
     /* ---- CARD PLOT ---- */
-    .plot-card{
-      background:rgba(255,255,255,.75);
-      backdrop-filter:blur(6px);
-      border-radius:18px;
-      padding:24px;
-      box-shadow:0 10px 24px rgba(0,0,0,.12);
-      transition:transform .3s, box-shadow .3s;
-    }
-    .plot-card:hover{
-      transform:translateY(-4px);
-      box-shadow:0 16px 32px rgba(0,0,0,.16);
-    }
-    .plot-title{ font-size:1.05rem; font-weight:600; margin-bottom:.25rem; }
+    .plot-card{background:rgba(255,255,255,.75);backdrop-filter:blur(6px);border-radius:18px;
+               padding:24px;box-shadow:0 10px 24px rgba(0,0,0,.12);transition:.3s}
+    .plot-card:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(0,0,0,.16)}
+    .plot-title{font-size:1.05rem;font-weight:600;margin-bottom:.25rem}
     /* ---- CONCLUSION ---- */
-    .conclusion{
-      background:#ffffff;
-      border-left:6px solid #0d6efd;
-      border-radius:12px;
-      box-shadow:0 8px 24px rgba(13,110,253,.15);
-      padding:32px;
-    }
-    .conclusion p{ margin-bottom:1rem; text-align:justify; }
-    .callout{
-      background:#0d6efd;
-      color:#fff;
-      border-radius:10px;
-      padding:1rem 1.25rem;
-      box-shadow:inset 0 0 6px rgba(0,0,0,.15);
-      font-size:.95rem;
-    }
-
-    
+    .conclusion{background:#fff;border-left:6px solid #0d6efd;border-radius:12px;
+                box-shadow:0 8px 24px rgba(13,110,253,.15);padding:32px}
+    .conclusion p{text-align:justify;margin-bottom:1rem}
+    .callout{background:#0d6efd;color:#fff;border-radius:10px;padding:1rem 1.25rem;
+             box-shadow:inset 0 0 6px rgba(0,0,0,.15);font-size:.95rem}
+    /* ---- CHATBOT ---- */
+    .chatbox{position:fixed;bottom:20px;right:20px;width:320px;max-height:500px;
+             background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.15);
+             display:flex;flex-direction:column;overflow:hidden}
+    .chat-header{background:#0d6efd;color:#fff;padding:10px 16px;font-weight:600}
+    .chat-body{flex:1;overflow-y:auto;padding:12px}
+    .chat-msg{margin-bottom:10px;font-size:.9rem;line-height:1.35}
+    .chat-msg.user{text-align:right}
+    .chat-msg.bot strong{color:#0d6efd}
+    .chat-input{display:flex;border-top:1px solid #eee}
+    .chat-input input{flex:1;border:none;padding:10px;font-size:.9rem}
+    .chat-input button{border:none;background:#0d6efd;color:#fff;padding:0 16px}
+    .chat-input input:focus{outline:none}
   </style>
 </head>
 <body>
   <div class="container py-5">
     <h1 class="text-center mb-5">
       <i class="bi bi-bar-chart-fill text-primary"></i>
-      best study time prediction based on lms access and assignment grades
+      Best Study Time Prediction
     </h1>
-    
-    <!-- FORM SEARCH -->
+
+    <!-- SEARCH ------------------------------------------------------->
     <form class="mb-4" method="get" action="/">
       <div class="input-group">
-        <input type="text" name="q" class="form-control" placeholder="Cari StudentID atau GradeClass..." value="{{ request.args.get('q', '') }}">
+        <input type="text" name="q" class="form-control"
+               placeholder="Cari StudentID atau GradeClass..."
+               value="{{ request.args.get('q','') }}">
         <button class="btn btn-primary" type="submit">
           <i class="bi bi-search"></i> Cari
         </button>
       </div>
     </form>
 
-    <!-- DATASET ---------------------------------------------------------->
+    <!-- DATASET ------------------------------------------------------>
     <div class="table-container">
       <h4 class="mb-3"><i class="bi bi-table"></i> Dataset Mahasiswa</h4>
-      <div class="table-scroll">
-        {{ table | safe }}
-      </div>
+      <div class="table-scroll">{{ table | safe }}</div>
     </div>
 
-    <!-- VISUALISASI ------------------------------------------------------>
+    <!-- VISUALISASI -------------------------------------------------->
     <div class="row g-4 mt-5">
       {% for plot in plots %}
       <div class="col-lg-6 d-flex">
@@ -87,35 +78,79 @@
       {% endfor %}
     </div>
 
-    <!-- KESIMPULAN ------------------------------------------------------->
+    <!-- KESIMPULAN --------------------------------------------------->
     <div class="conclusion mt-5">
       <h4 class="mb-3"><i class="bi bi-lightbulb-fill text-warning"></i> Kesimpulan Analisis</h4>
 
       <p><strong>1. Distribusi variabel utama.</strong><br>
-         • <em>StudyTimeWeekly</em> (0 – 20 jam/minggu) tersebar cukup merata, menandakan kebiasaan belajar yang beragam.<br>
-         • <em>Absences</em> kebanyakan 5 – 25 kali; sedikit sekali yang hadir sempurna.<br>
-         • <em>GPA</em> berkumpul pada 1.8 – 2.8; mayoritas berada di kategori performa menengah.</p>
+         • <em>StudyTimeWeekly</em> (0–20 jam) tersebar merata.<br>
+         • <em>Absences</em> kebanyakan 5–25 kali.<br>
+         • <em>GPA</em> berkumpul di 1.8–2.8.</p>
 
-      <p><strong>2. Hubungan antarvariabel.</strong><br>
-         • Korelasi <em>Absences&nbsp;↔&nbsp;GPA = –0.92</em>: ketidakhadiran tinggi → penurunan GPA drastis.<br>
-         • Korelasi <em>StudyTimeWeekly&nbsp;↔&nbsp;GPA = +0.18</em>: efek positif ada, tetapi jauh lebih lemah.</p>
+      <p><strong>2. Hubungan antar-variabel.</strong><br>
+         • <em>Absences ↔ GPA = −0.92</em> (negatif kuat).<br>
+         • <em>StudyTimeWeekly ↔ GPA = +0.18</em> (positif lemah).</p>
 
-      <p><strong>3. Kinerja Regresi Linier.</strong><br>
-         Fitur <code>[StudyTimeWeekly, Absences]</code> → <em>MSE ≈ 0.10</em>, <em>R² ≈ 0.88</em>.  
-         Model sederhana ini sudah menjelaskan 88 % variansi GPA.</p>
+      <p><strong>3. Model sederhana.</strong><br>
+         Fitur <code>[StudyTimeWeekly, Absences]</code> → <em>R² ≈ 0.88</em>.</p>
 
       <p><strong>4. Jam belajar terbaik.</strong><br>
-         Analisis rata-rata GPA tiap jam belajar menunjukkan titik optimum statistik di
-         <span class="fw-bold text-primary">18 – 20 jam / minggu</span> (≈ 2½ jam / hari).  
-         Di atas rentang ini kenaikan GPA makin datar (*diminishing return*).</p>
+         Titik optimum statistik di <span class="fw-bold text-primary">18–20 jam/minggu</span>.</p>
 
       <div class="callout mt-4">
         <i class="bi bi-check-circle-fill"></i>
-        <strong>Rekomendasi praktis:</strong> Pertahankan <u>kehadiran tinggi</u> (absensi &lt; 5) dan alokasikan waktu belajar
-        sekitar <b>18 ± 2 jam / minggu</b>. Strategi ini secara rata-rata mampu
-        menaikkan GPA ±0.45 poin—lebih efektif daripada sekadar menambah jam belajar tanpa memperbaiki kedisiplinan hadir.
+        <strong>Rekomendasi praktis:</strong> Pertahankan absensi &lt; 5 dan alokasikan
+        ±18 jam/minggu untuk belajar.
       </div>
     </div>
   </div>
+
+  <!-- CHATBOT -------------------------------------------------------->
+  <div class="chatbox" id="chatbox">
+    <div class="chat-header"><i class="bi bi-chat-dots-fill"></i> Study-Bot</div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="chat-input">
+      <input id="chat-input" type="text" placeholder="Tulis pesan..."/>
+      <button onclick="sendChat()"><i class="bi bi-send-fill"></i></button>
+    </div>
+  </div>
+
+  <script>
+    // tambah pesan ke tampilan
+    function appendMessage(type, text){
+      const div = document.createElement("div");
+      div.className = "chat-msg " + (type==="user" ? "user" : "bot");
+      div.innerHTML = (type==="bot") ? "<strong>Bot:</strong> "+text : text;
+      document.getElementById("chat-body").appendChild(div);
+      div.scrollIntoView();
+    }
+
+    // kirim ke backend
+    async function sendChat(){
+      const inp = document.getElementById("chat-input");
+      const msg = inp.value.trim();
+      if(!msg) return;
+      appendMessage("user", msg);
+      inp.value = "";
+
+      try{
+        const res = await fetch("/api/chat",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({message:msg})
+        });
+        const data = await res.json();
+        appendMessage("bot", data.response);
+      }catch(e){
+        appendMessage("bot", "Terjadi kesalahan koneksi.");
+      }
+    }
+
+    // enter key
+    document.getElementById("chat-input")
+            .addEventListener("keypress",e=>{
+      if(e.key==="Enter"){ e.preventDefault(); sendChat(); }
+    });
+  </script>
 </body>
 </html>

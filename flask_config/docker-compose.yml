@@ -1,9 +1,20 @@
-version: '3.8'
-
 services:
   flask-app:
-    build: .
+    build:
+      context: .          # direktori tempat Dockerfile berada
+      dockerfile: Dockerfile
+    container_name: flask_app
+
+    environment:
+      COL_LMS: LMSLogin      # Nama header kolom akses LMS
+      COL_GRADE: TaskScore   # Nama header kolom nilai tugas
+
     ports:
-      - "80:5000"
+      - "80:5000"            # host:container  →  http://localhost/
+
+    # Gunakan volume ini hanya saat development (hot-reload kode).
+    # Pastikan seluruh source, termasuk CSV, ada di ./app
     volumes:
       - ./app:/app
+
+    restart: unless-stopped

@@ -1,159 +1,183 @@
-# from flask import Flask, render_template
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# import os
+"""
+app.py — Dashboard Plotly + API chat jam-belajar
+• Tanpa model ML eksternal (heuristik sederhana)
+• Deteksi kolom fleksibel + ENV override + fallback otomatis
+"""
 
-# app = Flask(__name__)
-# os.makedirs("static", exist_ok=True)
-
-# @app.route("/")
-# def index():
-#     df = pd.read_csv("Student_performance_data.csv")
-
-#     plots = []
-
-#     # Plot 1: Histogram StudyTimeWeekly
-#     plt.figure(figsize=(6, 4))
-#     sns.histplot(df['StudyTimeWeekly'], kde=True, color='blue')
-#     plt.title('Distribusi Waktu Belajar Mingguan')
-#     path = "static/plot1.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Distribusi Waktu Belajar", "desc": "Histogram waktu belajar mingguan mahasiswa."})
-
-#     # Plot 2: Histogram Absences
-#     plt.figure(figsize=(6, 4))
-#     sns.histplot(df['Absences'], kde=True, color='green')
-#     plt.title('Distribusi Absensi')
-#     path = "static/plot2.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Distribusi Absensi", "desc": "Histogram jumlah ketidakhadiran mahasiswa."})
-
-#     # Plot 3: Histogram GPA
-#     plt.figure(figsize=(6, 4))
-#     sns.histplot(df['GPA'], kde=True, color='red')
-#     plt.title('Distribusi GPA')
-#     path = "static/plot3.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Distribusi GPA", "desc": "Distribusi nilai akhir mahasiswa."})
-
-#     # Plot 4: Countplot GradeClass
-#     plt.figure(figsize=(6, 4))
-#     sns.countplot(x='GradeClass', data=df)
-#     plt.title('Distribusi Grade Kelas')
-#     path = "static/plot4.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Distribusi GradeClass", "desc": "Jumlah mahasiswa per kelas."})
-
-#     # Plot 5: Heatmap Korelasi
-#     plt.figure(figsize=(6, 5))
-#     corr = df[['StudyTimeWeekly', 'Absences', 'GPA', 'Age', 'ParentalEducation']].corr()
-#     sns.heatmap(corr, annot=True, cmap='coolwarm', fmt='.2f')
-#     plt.title('Korelasi Antar Variabel')
-#     path = "static/plot5.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Korelasi Fitur Utama", "desc": "Heatmap korelasi antara GPA, Absensi, dll."})
-
-#     # Plot 6: Boxplot StudyTimeWeekly vs GradeClass
-#     plt.figure(figsize=(6, 4))
-#     sns.boxplot(x='GradeClass', y='StudyTimeWeekly', data=df)
-#     plt.title('Waktu Belajar vs GradeClass')
-#     path = "static/plot6.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Study Time vs GradeClass", "desc": "Perbandingan waktu belajar dengan nilai kelas."})
-
-#     # Plot 7: Boxplot Absences vs GradeClass
-#     plt.figure(figsize=(6, 4))
-#     sns.boxplot(x='GradeClass', y='Absences', data=df)
-#     plt.title('Absensi vs GradeClass')
-#     path = "static/plot7.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "Absensi vs GradeClass", "desc": "Hubungan absensi dengan nilai kelas."})
-
-#     # Plot 8: Boxplot GPA vs GradeClass
-#     plt.figure(figsize=(6, 4))
-#     sns.boxplot(x='GradeClass', y='GPA', data=df)
-#     plt.title('GPA vs GradeClass')
-#     path = "static/plot8.png"
-#     plt.savefig(path)
-#     plt.close()
-#     plots.append({"src": path, "title": "GPA vs GradeClass", "desc": "Perbandingan GPA terhadap kelas."})
-
-#     return render_template("index.html", plots=plots)
-
-# if __name__ == "__main__":
-#     app.run(debug=True, host="0.0.0.0")
-
-from flask import Flask, render_template, request
+import os, re, sys
 import pandas as pd
 import plotly.express as px
-import os
+from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+# ────────────────────────────────────────────────────────────────────
+# 0. Inisialisasi
+# ────────────────────────────────────────────────────────────────────
+app = Flask(__name__, template_folder="templates")
+DATA_PATH = "Student_performance_data.csv"
 
+# ────────────────────────────────────────────────────────────────────
+# 1. Muat dataset
+# ────────────────────────────────────────────────────────────────────
+try:
+    df_master = pd.read_csv(DATA_PATH)
+except FileNotFoundError:
+    sys.exit(f"[FATAL] CSV '{DATA_PATH}' tidak ditemukan di /app")
+
+# ────────────────────────────────────────────────────────────────────
+# 2. Utilitas
+# ────────────────────────────────────────────────────────────────────
+def canon(name: str) -> str:
+    """huruf kecil + hapus selain alfanumerik"""
+    return re.sub(r"[^0-9a-z]+", "", name.lower())
+
+def first_match(df, *candidates):
+    """kembalikan nama kolom asli yang canon()-nya cocok kandidat"""
+    cmap = {canon(c): c for c in df.columns}
+    for cand in candidates:
+        hit = cmap.get(canon(cand))
+        if hit:
+            return hit
+    return None
+
+def safe_float(v, default=0.0):
+    try:
+        f = float(v)
+        return f if pd.notna(f) else default
+    except (ValueError, TypeError):
+        return default
+
+# ────────────────────────────────────────────────────────────────────
+# 3. Konfigurasi kolom
+# ────────────────────────────────────────────────────────────────────
+COL_ID = first_match(df_master, "StudentID")
+if not COL_ID:
+    sys.exit("[FATAL] Kolom 'StudentID' tidak ditemukan di CSV.")
+
+# a) coba baca override ENV
+COL_LMS   = first_match(df_master, os.getenv("COL_LMS", ""))
+COL_GRADE = first_match(df_master, os.getenv("COL_GRADE", ""))
+
+# b) deteksi otomatis jika masih None
+if not COL_LMS:
+    COL_LMS = first_match(
+        df_master,
+        "LMSAccess", "lms_access", "LMSLogin", "LMS Login",
+        "lms_hits", "accesscount", "totalaccess", "login"
+    )
+if not COL_GRADE:
+    COL_GRADE = first_match(
+        df_master,
+        "AssignmentGrade", "assignment_grade", "Assignment Score",
+        "TaskScore", "taskscore", "nilai_tugas", "grade", "score"
+    )
+
+# c) fallback ke StudyTimeWeekly & GPA jika tetap None
+if not COL_LMS:
+    COL_LMS = first_match(df_master, "StudyTimeWeekly")
+    print(f"[INFO] Fallback COL_LMS  → '{COL_LMS}' (pakai StudyTimeWeekly)")
+
+if not COL_GRADE:
+    COL_GRADE = first_match(df_master, "GPA")
+    print(f"[INFO] Fallback COL_GRADE → '{COL_GRADE}' (pakai GPA)")
+
+print(f"[INFO] Kolom terpakai → ID: '{COL_ID}', LMS: '{COL_LMS}', Grade: '{COL_GRADE}'")
+
+# ────────────────────────────────────────────────────────────────────
+# 4. Prediksi heuristik
+# ────────────────────────────────────────────────────────────────────
+def predict_best_hours(lms_access: float, assignment_grade: float) -> float:
+    base = 12
+    adj  = (lms_access / 100) * 4 + (assignment_grade / 100) * 4
+    return min(max(base + adj, 8), 20)
+
+# ────────────────────────────────────────────────────────────────────
+# 5. ROUTE DASHBOARD
+# ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    df = pd.read_csv("Student_performance_data.csv")
-    # --- Filter dataset berdasarkan input user ---
-    query = request.args.get("q", "").strip().lower()
-    if query:
-        df = df[df.apply(lambda row: query in str(row['StudentID']).lower() or query in str(row['GradeClass']).lower(), axis=1)]
+    df = df_master.copy()
+
+    q = request.args.get("q", "").strip().lower()
+    if q:
+        df = df[df.apply(
+            lambda r: q in str(r[COL_ID]).lower()
+                      or q in str(r.get("GradeClass", "")).lower(),
+            axis=1
+        )]
+
     plots = []
+    def add(fig, t, d):
+        plots.append({"div": fig.to_html(full_html=False), "title": t, "desc": d})
 
-    # Plot 1: Histogram interaktif (Study Time)
-    fig1 = px.histogram(df, x="StudyTimeWeekly", nbins=20, title="Distribusi Waktu Belajar Mingguan")
-    plots.append({
-        "div": fig1.to_html(full_html=False),
-        "title": "Distribusi Waktu Belajar",
-        "desc": "Grafik ini menunjukkan sebaran jam belajar mingguan mahasiswa. Pola ini dapat membantu mengidentifikasi waktu optimal untuk belajar."
-    })
+    add(px.histogram(df, x="StudyTimeWeekly", nbins=20,
+                     title="Distribusi Waktu Belajar Mingguan"),
+        "Distribusi Waktu Belajar",
+        "Sebaran jam belajar mingguan mahasiswa.")
 
-    # Plot 2: Histogram Absensi
-    fig2 = px.histogram(df, x="Absences", nbins=20, title="Distribusi Absensi", color_discrete_sequence=["green"])
-    plots.append({
-        "div": fig2.to_html(full_html=False),
-        "title": "Distribusi Absensi",
-        "desc": "Histogram absensi memperlihatkan frekuensi ketidakhadiran mahasiswa. Dapat digunakan untuk melihat korelasi terhadap GPA."
-    })
+    add(px.histogram(df, x="Absences", nbins=20, color_discrete_sequence=["green"],
+                     title="Distribusi Absensi"),
+        "Distribusi Absensi",
+        "Frekuensi ketidakhadiran mahasiswa.")
 
-    # Plot 3: Histogram GPA
-    fig3 = px.histogram(df, x="GPA", nbins=20, title="Distribusi GPA", color_discrete_sequence=["red"])
-    plots.append({
-        "div": fig3.to_html(full_html=False),
-        "title": "Distribusi GPA",
-        "desc": "Grafik ini menggambarkan sebaran nilai akhir mahasiswa (GPA). Dapat menunjukkan apakah distribusinya normal atau condong."
-    })
+    add(px.histogram(df, x="GPA", nbins=20, color_discrete_sequence=["red"],
+                     title="Distribusi GPA"),
+        "Distribusi GPA",
+        "Sebaran nilai akhir mahasiswa.")
 
-    # Plot 4: Barplot GradeClass
-    fig4 = px.histogram(df, x="GradeClass", title="Distribusi Grade Kelas")
-    plots.append({
-        "div": fig4.to_html(full_html=False),
-        "title": "Distribusi GradeClass",
-        "desc": "Bar chart ini menunjukkan jumlah mahasiswa pada tiap kelas (GradeClass). Ini membantu memetakan persebaran prestasi akademik."
-    })
+    add(px.histogram(df, x="GradeClass", title="Distribusi Grade Kelas"),
+        "Distribusi GradeClass",
+        "Jumlah mahasiswa per kelas.")
 
-    # Plot 5: Heatmap Korelasi
-    corr = df[['StudyTimeWeekly', 'Absences', 'GPA', 'Age', 'ParentalEducation']].corr()
-    fig5 = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu", title="Heatmap Korelasi")
-    plots.append({
-        "div": fig5.to_html(full_html=False),
-        "title": "Korelasi Antar Variabel",
-        "desc": "Heatmap ini menunjukkan kekuatan hubungan antar fitur seperti GPA, absensi, usia, dll. Warna merah/biru menandakan korelasi kuat positif atau negatif."
-    })
+    corr = df[["StudyTimeWeekly","Absences","GPA",
+               "Age","ParentalEducation"]].corr()
+    add(px.imshow(corr, text_auto=True, color_continuous_scale="RdBu",
+                  title="Heatmap Korelasi"),
+        "Korelasi Antar Variabel",
+        "Kekuatan hubungan antar-fitur.")
 
-    # Konversi DataFrame ke HTML Table
-    table_html = df.to_html(classes="table table-bordered table-striped table-sm", index=False)
+    table_html = df.to_html(classes="table table-bordered table-striped table-sm",
+                            index=False)
 
     return render_template("index.html", plots=plots, table=table_html)
 
+# ────────────────────────────────────────────────────────────────────
+# 6. API CHAT
+# ────────────────────────────────────────────────────────────────────
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    payload = request.get_json(silent=True) or {}
+    msg     = str(payload.get("message","")).strip()
+
+    if not msg:
+        return jsonify({"response":"Pesan kosong, silakan ketik pertanyaan."})
+
+    m = re.search(r"\b\d+\b", msg)
+    if m:
+        sid = int(m.group())
+        row = df_master[df_master[COL_ID] == sid]
+        if row.empty:
+            return jsonify({"response":f"StudentID {sid} tidak ditemukan."})
+
+        lms   = safe_float(row[COL_LMS].iat[0])
+        grade = safe_float(row[COL_GRADE].iat[0])
+        hours = round(predict_best_hours(lms, grade), 1)
+
+        return jsonify({"response":
+            f"Berdasarkan akses LMS ({lms}) dan nilai tugas ({grade}), "
+            f"jam belajar optimal Student {sid} ≈ **{hours} jam/minggu**."
+        })
+
+    if "help" in msg.lower():
+        return jsonify({"response":
+            "Contoh: 'Student 123 berapa jam belajar?'. Atau ketik StudentID saja."
+        })
+
+    return jsonify({"response":
+        "Maaf, format belum dipahami. Contoh: 'Student 101 jam belajarnya?'."
+    })
+
+# ────────────────────────────────────────────────────────────────────
+# 7. MAIN
+# ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
-
-
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
