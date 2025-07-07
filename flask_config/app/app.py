@@ -91,7 +91,7 @@
 # if __name__ == "__main__":
 #     app.run(debug=True, host="0.0.0.0")
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pandas as pd
 import plotly.express as px
 import os
@@ -101,7 +101,10 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     df = pd.read_csv("Student_performance_data.csv")
-
+    # --- Filter dataset berdasarkan input user ---
+    query = request.args.get("q", "").strip().lower()
+    if query:
+        df = df[df.apply(lambda row: query in str(row['StudentID']).lower() or query in str(row['GradeClass']).lower(), axis=1)]
     plots = []
 
     # Plot 1: Histogram interaktif (Study Time)
